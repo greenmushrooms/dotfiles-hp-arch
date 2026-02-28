@@ -1,0 +1,98 @@
+// -*- mode: jsonc -*-
+{
+    "height": 32,
+    "spacing": 6,
+
+    "modules-left": [
+        "hyprland/workspaces"
+    ],
+    "modules-center": [
+        "hyprland/window"
+    ],
+    "modules-right": [
+        "cpu",
+        "memory",
+        "pulseaudio",
+        "battery",
+        "clock",
+        "tray"
+    ],
+
+    // ── Workspaces ──────────────────────────────────────────────
+    "hyprland/workspaces": {
+        "format": "{id}",
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
+        "all-outputs": true
+    },
+
+    // ── Active window title ──────────────────────────────────────
+    "hyprland/window": {
+        "max-length": 60,
+        "separate-outputs": true
+    },
+
+    // ── CPU ──────────────────────────────────────────────────────
+    "cpu": {
+        "interval": 2,
+        "format": "{usage}% ",
+        "tooltip": true,
+        "tooltip-format": "CPU  {usage}%\n\nCore breakdown:\n{icon0} Core 1  {core0usage}%\n{icon1} Core 2  {core1usage}%\n{icon2} Core 3  {core2usage}%\n{icon3} Core 4  {core3usage}%",
+        "format-icons": ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+    },
+
+    // ── Memory ──────────────────────────────────────────────────
+    "memory": {
+        "interval": 5,
+        "format": "{}% ",
+        "tooltip": true,
+        "tooltip-format": "RAM  {percentage}%\n\nUsed:      {used:0.1f} GiB\nAvailable: {avail:0.1f} GiB\nTotal:     {total:0.1f} GiB\n\nSwap: {swapUsed:0.1f} / {swapTotal:0.1f} GiB"
+    },
+
+    // ── Audio ────────────────────────────────────────────────────
+    "pulseaudio": {
+        "format": "{volume}% {icon} {format_source}",
+        "format-bluetooth": "{volume}% {icon} {format_source}",
+        "format-bluetooth-muted": " {icon} {format_source}",
+        "format-muted": " {format_source}",
+        "format-source": "{volume}% ",
+        "format-source-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "on-click": "pavucontrol",
+        "scroll-step": 2
+    },
+
+    // ── Battery ──────────────────────────────────────────────────
+    "battery": {
+        "interval": 30,
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon}  {capacity}%",
+        "format-charging": "  {capacity}%",
+        "format-plugged": "  {capacity}%",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip-format": "{timeTo}\nDraw: {power:.1f}W"
+    },
+
+    // ── Clock ────────────────────────────────────────────────────
+    "clock": {
+        "format": "  {:%H:%M}",
+        "format-alt": "  {:%a %b %d}",
+        "tooltip-format": "<big>{:%B %Y}</big>\n<tt><small>{calendar}</small></tt>"
+    },
+
+    // ── Tray ─────────────────────────────────────────────────────
+    "tray": {
+        "spacing": 8
+    }
+}

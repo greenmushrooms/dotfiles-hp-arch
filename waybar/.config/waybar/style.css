@@ -1,0 +1,150 @@
+/* Tokyo Night — Minimal Borderless */
+
+/* ── Palette ─────────────────────────────────────────────────
+   bg:       #1a1b26
+   bg_dark:  #16161e
+   bg_hl:    #292e42
+   fg:       #c0caf5
+   fg_dim:   #565f89
+   blue:     #7aa2f7
+   purple:   #bb9af7
+   cyan:     #7dcfff
+   green:    #9ece6a
+   orange:   #ff9e64
+   red:      #f7768e
+──────────────────────────────────────────────────────────── */
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+    font-size: 13px;
+    border: none;
+    border-radius: 0;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: #1a1b26;
+    color: #c0caf5;
+}
+
+/* ── Workspaces ─────────────────────────────────────────────── */
+
+#workspaces {
+    margin: 0;
+    padding: 0 4px;
+}
+
+#workspaces button {
+    padding: 0 8px;
+    color: #565f89;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+#workspaces button:hover {
+    color: #c0caf5;
+    background: #292e42;
+}
+
+#workspaces button.active {
+    color: #7aa2f7;
+    border-bottom: 2px solid #7aa2f7;
+}
+
+#workspaces button.urgent {
+    color: #f7768e;
+    border-bottom: 2px solid #f7768e;
+}
+
+/* ── Window title ───────────────────────────────────────────── */
+
+#window {
+    color: #565f89;
+    font-size: 12px;
+    padding: 0 8px;
+}
+
+/* ── Right modules shared style ─────────────────────────────── */
+
+#cpu,
+#memory,
+#pulseaudio,
+#battery,
+#clock,
+#tray {
+    padding: 0 12px;
+    color: #c0caf5;
+}
+
+/* subtle left separator between right modules */
+#cpu,
+#memory,
+#pulseaudio,
+#battery,
+#clock {
+    border-left: 1px solid #292e42;
+}
+
+/* ── Per-module accent colours ──────────────────────────────── */
+
+#cpu {
+    color: #7dcfff;
+}
+
+#memory {
+    color: #bb9af7;
+}
+
+#pulseaudio {
+    color: #7aa2f7;
+}
+
+#pulseaudio.muted {
+    color: #565f89;
+}
+
+#battery {
+    color: #9ece6a;
+}
+
+#battery.warning {
+    color: #ff9e64;
+}
+
+#battery.critical {
+    color: #f7768e;
+}
+
+#battery.charging {
+    color: #9ece6a;
+}
+
+#clock {
+    color: #c0caf5;
+    font-weight: bold;
+}
+
+/* ── Tray ───────────────────────────────────────────────────── */
+
+#tray {
+    padding: 0 8px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    color: #f7768e;
+}
+
+/* ── Tooltip ────────────────────────────────────────────────── */
+
+tooltip {
+    background: #16161e;
+    color: #c0caf5;
+    border: 1px solid #292e42;
+    border-radius: 4px;
+}
