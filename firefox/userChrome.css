@@ -1,4 +1,5 @@
 #nav-bar { display: none !important; }
+#import-button { display: none !important; }
 
 /* Square, compact tabs */
 :root {

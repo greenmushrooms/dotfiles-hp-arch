@@ -1,29 +1,35 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -e
 
-PROFILES_DIR="$HOME/.config/mozilla/firefox"
-PROFILES_INI="$PROFILES_DIR/profiles.ini"
+FIREFOX_DIR="/usr/lib/firefox"
+PROFILE_DIR=$(find ~/.mozilla/firefox -maxdepth 1 -name '*.default-release' -print -quit 2>/dev/null)
 
-if [[ ! -f "$PROFILES_INI" ]]; then
-  echo "Firefox profiles.ini not found, skipping."
-  exit 0
-fi
+# Autoconfig files (require sudo)
+echo "Installing autoconfig files to $FIREFOX_DIR ..."
+sudo cp firefox/autoconfig/local-settings.js "$FIREFOX_DIR/defaults/pref/local-settings.js"
+sudo cp firefox/autoconfig/mozilla.cfg "$FIREFOX_DIR/mozilla.cfg"
 
-PROFILE_PATH=$(awk -F= '/^Default=/ { print $2; exit }' "$PROFILES_INI")
-
-if [[ -z "$PROFILE_PATH" ]]; then
-  echo "Could not determine default Firefox profile, skipping."
+# User profile files
+if [ -z "$PROFILE_DIR" ]; then
+  echo "No Firefox profile found. Start Firefox first, then re-run."
   exit 1
 fi
 
-CHROME_DIR="$PROFILES_DIR/$PROFILE_PATH/chrome"
-mkdir -p "$CHROME_DIR"
+echo "Installing user files to $PROFILE_DIR ..."
+cp firefox/user.js "$PROFILE_DIR/user.js"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ln -sf "$SCRIPT_DIR/userChrome.css" "$CHROME_DIR/userChrome.css"
-ln -sf "$SCRIPT_DIR/user.js" "$PROFILES_DIR/$PROFILE_PATH/user.js"
-ln -sf "$SCRIPT_DIR/tridactylrc" "$HOME/.config/tridactyl/tridactylrc"
+mkdir -p "$PROFILE_DIR/chrome"
+cp firefox/userChrome.css "$PROFILE_DIR/chrome/userChrome.css"
 
-echo "Linked userChrome.css -> $CHROME_DIR/userChrome.css"
-echo "Linked user.js -> $PROFILES_DIR/$PROFILE_PATH/user.js"
-echo "Linked tridactylrc -> $HOME/.config/tridactyl/tridactylrc"
+# Tridactyl config
+mkdir -p ~/.config/tridactyl
+ln -sf "$(pwd)/firefox/tridactylrc" ~/.config/tridactyl/tridactylrc
+
+# Tridactyl native messenger
+if command -v curl &>/dev/null; then
+  echo "Installing Tridactyl native messenger ..."
+  curl -fsSL https://raw.githubusercontent.com/tridactyl/tridactyl/master/native/install.sh -o /tmp/trinativeinstall.sh
+  sh /tmp/trinativeinstall.sh master
+fi
+
+echo "Done. Restart Firefox for changes to take effect."

@@ -1,1 +1,2 @@
-set newtab about:blank
+" newtab is handled by mozilla.cfg autoconfig, not Tridactyl
+" using the no-new-tab variant of Tridactyl
