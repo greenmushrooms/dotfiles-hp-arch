@@ -3,6 +3,11 @@
     foreground = #00ff00
     cursor-color = #ff00ff
 
+    keybind = ctrl+shift+h=goto_split:left
+    keybind = ctrl+shift+j=goto_split:bottom
+    keybind = ctrl+shift+k=goto_split:top
+    keybind = ctrl+shift+l=goto_split:right
+
     unfocused-split-opacity = 0.4
     unfocused-split-fill = #001a4d
 
