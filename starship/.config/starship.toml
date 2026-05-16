@@ -1,0 +1,20 @@
+format = "$python$git_branch$git_status$character"
+
+[directory]
+truncation_length = 0
+truncate_to_repo = false
+style = "#00ff66"
+
+
+[character]
+success_symbol = "[>](#00ff66)"
+error_symbol = "[>](#ff0055)"
+
+[python]
+format = '[$virtualenv](#ffee00) '
+
+[git_branch]
+format = '[$branch](#0099ff) '
+
+[git_status]
+format = '([$all_status$ahead_behind](#ff0055) )'

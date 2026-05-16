@@ -1,0 +1,37 @@
+#nav-bar { display: none !important; }
+#import-button { display: none !important; }
+
+/* Square, compact tabs */
+:root {
+  --tab-min-height: 22px !important;
+  --tab-block-margin: 0px !important;
+  --inline-tab-padding: 4px !important;
+}
+
+.tab-background {
+  border-radius: unset !important;
+}
+
+.titlebar-spacer,
+.titlebar-buttonbox-container {
+  display: none !important;
+}
+
+#TabsToolbar {
+  padding-top: 0 !important;
+}
+
+.tab-content {
+  padding-inline: 5px !important;
+}
+
+.tab-label {
+  font-size: 11px !important;
+}
+
+.tab-close-button {
+  height: 16px !important;
+  width: 16px !important;
+  padding: 3px !important;
+  margin-inline-end: 0 !important;
+}

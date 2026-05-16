@@ -1,0 +1,11 @@
+[user]
+	email = viacheslav.gorelik@gmail.com
+	name = slava
+[push]
+	default = current
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
