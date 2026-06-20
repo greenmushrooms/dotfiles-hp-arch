@@ -18,7 +18,7 @@ hl.monitor({
 ---------------------
 
 local terminal    = "ghostty"
-local fileManager = "thunar"
+local fileManager = "ghostty -e yazi"
 local menu        = "hyprlauncher"
 local browser     = "firefox"
 
