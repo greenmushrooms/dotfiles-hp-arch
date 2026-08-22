@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# wifi-menu — Omarchy-style Wi-Fi picker: the impala TUI in a floating terminal.
+# iwd is the backend; membership in the `wheel` group is what grants D-Bus access.
+set -euo pipefail
+
+if ! command -v impala >/dev/null; then
+    notify-send -u critical "Wi-Fi" "impala is not installed (sudo pacman -S impala)" 2>/dev/null || true
+    exit 1
+fi
+
+exec ghostty \
+    --class=wifi-menu \
+    --title="Wi-Fi" \
+    --gtk-single-instance=false \
+    -e impala

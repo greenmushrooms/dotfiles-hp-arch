@@ -178,6 +178,7 @@ hl.device({
 ---------------------
 
 local mainMod = "SUPER"
+local home    = os.getenv("HOME")
 
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
@@ -189,6 +190,9 @@ hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + CTRL + J", hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd("pkill -SIGUSR1 waybar"))
+hl.bind(mainMod .. " + W",         hl.dsp.exec_cmd(home .. "/.local/bin/wifi-menu"))
+hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd(home .. "/.local/bin/vpn toggle"))
+hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen())
 
 -- Focus
 hl.bind(mainMod .. " + H",     hl.dsp.focus({ direction = "left" }))
@@ -280,4 +284,12 @@ hl.window_rule({
     match = { class = "hyprland-run" },
     move  = "20 monitor_h-120",
     float = true,
+})
+
+hl.window_rule({
+    name  = "float-wifi-menu",
+    match = { class = "wifi-menu" },
+    float = true,
+    size  = "900 560",
+    center = true,
 })

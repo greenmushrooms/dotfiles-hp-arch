@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# vpn — control and report the WireGuard tunnel.
+#
+#   vpn up | down | toggle | status | json | edit
+#
+# `json` is what waybar's custom/vpn module calls. Start/stop go through
+# systemd so polkit decides who may flip it (see 50-wg-quick.rules).
+set -uo pipefail
+
+iface=${WG_IFACE:-wg0}
+unit="wg-quick@${iface}.service"
+conf="/etc/wireguard/${iface}.conf"
+
+# /etc/wireguard is 700 root:root, so an unprivileged stat of the config
+# always fails. Ask systemd what the unit is doing instead.
+is_up()     { [[ -d /sys/class/net/$iface ]]; }
+unit_state() { systemctl show -p ActiveState --value "$unit" 2>/dev/null; }
+last_error() { systemctl show -p Result --value "$unit" 2>/dev/null; }
+
+# Epoch of the peer's last handshake, or empty if we may not ask.
+# wg reports 0 when the peer has never answered at all -- that is a dead
+# tunnel wearing a live interface, so it must not read as connected.
+handshake_ts() {
+    sudo -n wg show "$iface" latest-handshakes 2>/dev/null | awk 'NR==1 {print $2}'
+}
+
+human_bytes() {
+    numfmt --to=iec --suffix=B "${1:-0}" 2>/dev/null || echo "${1:-0}B"
+}
+
+counter() { cat "/sys/class/net/$iface/statistics/$1" 2>/dev/null || echo 0; }
+
+tunnel_addr() {
+    ip -4 -brief addr show "$iface" 2>/dev/null | awk '{print $3}'
+}
+
+case "${1:-status}" in
+    up)
+        systemctl start "$unit"
+        ;;
+    down)
+        systemctl stop "$unit"
+        ;;
+    toggle)
+        if is_up; then
+            systemctl stop "$unit"
+        elif ! systemctl start "$unit"; then
+            notify-send -u critical "VPN" "wg0 failed to start ($(last_error))" 2>/dev/null
+            exit 1
+        fi
+        ;;
+    edit)
+        sudo "${EDITOR:-vi}" "$conf"
+        ;;
+    status)
+        if is_up; then echo "up"
+        elif [[ $(unit_state) == failed ]]; then echo "failed"
+        else echo "down"
+        fi
+        ;;
+    json)
+        if is_up; then
+            ts=$(handshake_ts)
+            cls=up
+            if [[ -z $ts ]]; then
+                hs="unknown (cannot query wg)"
+            elif [[ $ts -eq 0 ]]; then
+                hs="never — peer has not answered"
+                cls=stale
+            else
+                age=$(( $(date +%s) - ts ))
+                hs="${age}s ago"
+                # A silent peer means the interface is up but the tunnel is dead.
+                [[ $age -gt 300 ]] && cls=stale
+            fi
+            tip="WireGuard $iface — up"
+            tip+="\\naddress   $(tunnel_addr)"
+            tip+="\\nhandshake $hs"
+            tip+="\\nrx $(human_bytes "$(counter rx_bytes)")   tx $(human_bytes "$(counter tx_bytes)")"
+            tip+="\\n\\nClick to disconnect"
+            printf '{"text":"󰦝","class":"%s","tooltip":"%s"}\n' "$cls" "$tip"
+        elif [[ $(unit_state) == failed ]]; then
+            printf '{"text":"󰦞","class":"failed","tooltip":"WireGuard %s — start failed (%s)\\nCheck: journalctl -u %s\\n\\nClick to retry"}\n' \
+                "$iface" "$(last_error)" "$unit"
+        else
+            printf '{"text":"󰦞","class":"down","tooltip":"WireGuard %s — down\\n\\nClick to connect"}\n' "$iface"
+        fi
+        ;;
+    *)
+        echo "usage: vpn {up|down|toggle|status|json|edit}" >&2
+        exit 2
+        ;;
+esac
