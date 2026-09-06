@@ -1,0 +1,16 @@
+[Unit]
+Description=Power on Wi-Fi and reconnect (boot and resume)
+Documentation=man:iwd(8) man:iwctl(1)
+# Wants= rather than Requires=: a broken iwd should not make this unit fail the
+# boot, it should just leave wifi-up to report that the device never showed up.
+Wants=iwd.service
+After=iwd.service
+After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/wifi-up
+
+[Install]
+WantedBy=multi-user.target
+WantedBy=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target

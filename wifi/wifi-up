@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# wifi-up -- put Wi-Fi back in a usable state without manual intervention.
+#
+# Runs at boot and after every resume. Everything here is idempotent: on a
+# machine whose Wi-Fi is already up and connected it does nothing observable.
+set -euo pipefail
+
+DEV=${WIFI_DEV:-wlan0}
+
+# systemd-rfkill persists the soft-block state to /var/lib/systemd/rfkill and
+# restores it on the next boot, so one stray airplane-mode keypress stays
+# sticky across reboots until something explicitly clears it.
+rfkill unblock wlan 2>/dev/null || true
+
+# iwd is still starting at boot, and after resume the device takes a moment to
+# reappear on the bus -- so poll rather than assume it is there. Powering a
+# device that is already on is a no-op, which is what makes this safe to run
+# unconditionally on every wakeup.
+powered=0
+for _ in $(seq 1 20); do
+    if iwctl device "$DEV" show >/dev/null 2>&1; then
+        if iwctl device "$DEV" set-property Powered on >/dev/null 2>&1; then
+            powered=1
+            break
+        fi
+    fi
+    sleep 0.5
+done
+
+if [[ $powered -eq 0 ]]; then
+    echo "wifi-up: $DEV never appeared in iwd" >&2
+    exit 1
+fi
+
+# Powering on is enough for iwd to autoconnect on its own, but it resumes from
+# autoconnect_full -- a full-spectrum scan that has taken minutes here. An
+# explicit scan gets the known network back in seconds instead. It fails
+# harmlessly if a scan is already in flight or the link is already up.
+iwctl station "$DEV" scan >/dev/null 2>&1 || true
