@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# JankyBorders — colored border around the focused window.
+# Symlinked to ~/.config/borders/bordersrc; runs as a brew service
+# (`brew services restart borders` after edits).
+#
+# Unfocused windows get no border (transparent), so the 2px AeroSpace gaps
+# stay clean and only the focused window stands out. Accent matches the
+# SketchyBar focused-workspace pill.
+
+options=(
+  style=round
+  width=4.0
+  hidpi=on
+  active_color=0xff89b4fa
+  inactive_color=0x00000000
+)
+
+borders "${options[@]}"

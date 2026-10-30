@@ -1,0 +1,75 @@
+/* Address bar: shown or hidden, toggled by Cmd+E (handled in mozilla.cfg,
+   which adds/removes the [navhidden] attribute). No hover-to-peek — it's
+   binary. Press Cmd+E to show the bar before installing extensions so the
+   install permission prompt has a visible element to anchor to.
+   max-height:0 keeps the element in layout so doorhanger popups still anchor
+   correctly even while hidden. */
+:root[navhidden]:not([customizing]) #nav-bar {
+  max-height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+:root[navhidden]:not([customizing]) #nav-bar > * {
+  visibility: hidden !important;
+}
+/* Hide the urlbar "breakout" (floating search box) while hidden. */
+:root[navhidden] #urlbar[breakout][breakout-extend],
+:root[navhidden] #urlbar.megabar[breakout] {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Disable the megabar "breakout" expansion: when focused, the urlbar normally
+   detaches and floats up/wider. Pin it in place so clicking it doesn't move or
+   resize the text box. */
+#urlbar[breakout][breakout-extend] {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+#urlbar[breakout][breakout-extend] > #urlbar-input-container {
+  height: var(--urlbar-height) !important;
+  padding-block: 0 !important;
+  padding-inline: 0 !important;
+}
+#navigator-toolbox::after { display: none !important; }
+
+#PersonalToolbar { visibility: collapse !important; }
+#import-button { display: none !important; }
+
+/* Square, compact tabs */
+:root {
+  --tab-min-height: 30px !important;
+  --tab-block-margin: 0px !important;
+  --inline-tab-padding: 4px !important;
+}
+
+.tab-background {
+  border-radius: unset !important;
+}
+
+.titlebar-spacer {
+  display: none !important;
+}
+
+#TabsToolbar {
+  padding-top: 0 !important;
+}
+
+.tab-content {
+  padding-inline: 5px !important;
+}
+
+.tab-label {
+  font-size: 12px !important;
+}
+
+.tab-close-button {
+  height: 16px !important;
+  width: 16px !important;
+  padding: 3px !important;
+  margin-inline-end: 0 !important;
+}

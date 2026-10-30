@@ -1,0 +1,143 @@
+# AeroSpace config — i3/Hyprland-style tiling for macOS
+# Installed to ~/.aerospace.toml (symlinked from dotfiles)
+
+start-at-login = true
+after-login-command = []
+after-startup-command = []
+
+# Don't fight macOS Spaces — keep AeroSpace workspaces independent.
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+# Update the SketchyBar workspace highlight. Runs the plugin directly rather
+# than `sketchybar --trigger`, which added a round trip (trigger -> sketchybar
+# spawning the script) of ~100-200ms before the highlight could paint.
+exec-on-workspace-change = ['/bin/bash', '-c',
+  'SENDER=aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE exec ~/.config/sketchybar/plugins/aerospace.sh 2>/dev/null || true'
+]
+
+[gaps]
+inner.horizontal = 2
+inner.vertical = 2
+outer.left = 2
+outer.right = 2
+outer.top = [{ monitor.'built-in' = 2 }, 34]
+outer.bottom = 2
+
+# ---------------------------------------------------------------------------
+# Floating-by-default rules (apps that don't tile well)
+# ---------------------------------------------------------------------------
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.1password.1password'
+run = 'layout floating'
+
+# ---------------------------------------------------------------------------
+# Main mode — default keybindings
+# ---------------------------------------------------------------------------
+[mode.main.binding]
+
+# Focus apps on plain alt (not ctrl) so they don't shadow terminal keys: plain
+# Ctrl+letter is heavily used by nvim/shells/TUIs, and AeroSpace grabs global
+# binds before the terminal sees them.
+# Note: dropped `-n` for Firefox so focus follows the new window; `--new-window`
+# still opens a fresh window using the running instance.
+alt-b = 'exec-and-forget open -na Firefox --args --new-window'
+alt-e = 'exec-and-forget open -a Finder ~'   # file explorer
+alt-t = 'exec-and-forget open -na Ghostty'
+alt-s = 'exec-and-forget open -a Slack'
+
+# Alt+Z — "z for Zed" alias. Alt is the safest modifier on macOS (apps use cmd),
+# and AeroSpace grabs it globally so it never types `Ω` in a field.
+alt-z = 'exec-and-forget open -na Zed'
+
+# Quick notes: open a scratch notes file in nvim (in a fresh Ghostty window).
+# The notes path is wrapped INSIDE a shell command (`nu -c '...'`) on purpose:
+# if it were a bare trailing arg, macOS also delivers it to Ghostty as a
+# document-to-open, triggering the "Allow Ghostty to execute notes.txt?" prompt
+# and re-running the file as a command. Wrapping it avoids that second path.
+alt-n = "exec-and-forget open -na Ghostty --args -e nu -c 'nvim ~/Documents/notes.txt'"
+
+# Go to workspace: Alt + 1..9. Not on Ctrl so nvim keeps Ctrl+6 (<C-^>) and
+# Ctrl+2 (<C-Space>).
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+alt-3 = 'workspace 3'
+alt-4 = 'workspace 4'
+alt-5 = 'workspace 5'
+alt-6 = 'workspace 6'
+alt-7 = 'workspace 7'
+alt-8 = 'workspace 8'
+alt-9 = 'workspace 9'
+
+# Move focused window to workspace and follow it: Alt + Shift + 1..9
+# AeroSpace grabs these globally, so Option+digit no longer types its symbol
+# (e.g. Option+2 = ™) anywhere.
+alt-shift-1 = 'move-node-to-workspace --focus-follows-window 1'
+alt-shift-2 = 'move-node-to-workspace --focus-follows-window 2'
+alt-shift-3 = 'move-node-to-workspace --focus-follows-window 3'
+alt-shift-4 = 'move-node-to-workspace --focus-follows-window 4'
+alt-shift-5 = 'move-node-to-workspace --focus-follows-window 5'
+alt-shift-6 = 'move-node-to-workspace --focus-follows-window 6'
+alt-shift-7 = 'move-node-to-workspace --focus-follows-window 7'
+alt-shift-8 = 'move-node-to-workspace --focus-follows-window 8'
+alt-shift-9 = 'move-node-to-workspace --focus-follows-window 9'
+
+# Focus direction (vim-style). On alt-shift; plain alt-hjkl moves the window.
+alt-shift-h = 'focus left'
+alt-shift-j = 'focus down'
+alt-shift-k = 'focus up'
+alt-shift-l = 'focus right'
+
+# Focus direction (arrows — same as above, for consistency with ctrl+arrow window moves)
+alt-left  = 'focus left'
+alt-down  = 'focus down'
+alt-up    = 'focus up'
+alt-right = 'focus right'
+
+# Move window in tiling tree (vim-style), i.e. reposition it within the current
+# workspace. On plain alt; focus stays on the moved window.
+alt-h = 'move left'
+alt-j = 'move down'
+alt-k = 'move up'
+alt-l = 'move right'
+
+# Multi-monitor
+# Focus monitor is on ctrl-alt-cmd since ctrl-alt-hjkl is resize.
+ctrl-alt-cmd-h = 'focus-monitor --wrap-around left'
+ctrl-alt-cmd-l = 'focus-monitor --wrap-around right'
+ctrl-shift-alt-h = 'move-node-to-monitor --wrap-around left'
+ctrl-shift-alt-l = 'move-node-to-monitor --wrap-around right'
+
+# Layout controls
+alt-slash = 'layout tiles horizontal vertical'
+alt-comma = 'layout accordion horizontal vertical'
+alt-shift-space = 'layout floating tiling'   # toggle float on focused window
+# AeroSpace fullscreen — use this rather than macOS native fullscreen
+# (ctrl-cmd-f, now unbound again). Native fullscreen moves the window to its own
+# macOS Space, and AeroSpace re-inserts it elsewhere on return, shuffling the
+# layout; this one keeps the window's place in the tree.
+alt-f = 'fullscreen'
+
+# Resize: hold Alt+Ctrl and tap h/j/k/l (no mode to enter or get stuck in).
+# l/h = wider/narrower, k/j = taller/shorter.
+ctrl-alt-h = 'resize width -50'
+ctrl-alt-l = 'resize width +50'
+ctrl-alt-j = 'resize height -50'
+ctrl-alt-k = 'resize height +50'
+ctrl-alt-0 = 'balance-sizes'   # reset all windows in the workspace to equal size
+
+# Reload config after edits
+ctrl-alt-cmd-r = 'reload-config'
+
+# Close focused window (and quit the app if it was the last one).
+# On alt (not plain ctrl) so Ctrl+Q reaches the terminal — plain <C-q> is
+# terminal flow-control (XON/XOFF resume), which AeroSpace would otherwise eat.
+alt-q = 'close --quit-if-last-window'

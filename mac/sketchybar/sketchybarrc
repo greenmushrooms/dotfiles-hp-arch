@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+# SketchyBar config — minimal AeroSpace-aware menu bar.
+# Symlinked to ~/.config/sketchybar/sketchybarrc
+#
+# Style borrowed from tifandotme/dotfiles: rounded "pills", workspaces grouped
+# in one pill. Unlike theirs the bar itself is filled (desktop is rarely
+# visible under tiled windows), with pills a shade lighter than the bar.
+
+PLUGIN_DIR="$HOME/.config/sketchybar/plugins"
+
+# Catppuccin-ish palette
+export TRANSPARENT=0x00000000
+export BAR=0xff1e1e2e        # bar background
+export PILL=0xff313244       # pill background, a shade lighter than the bar
+export SHADOW=0xff11111b
+export ACCENT=0xff89b4fa     # focused workspace / icons
+export FOREGROUND=0xffcad3f5
+export DIM=0xff6c7086        # empty workspaces
+
+# ---------------------------------------------------------------------------
+# Bar appearance
+# ---------------------------------------------------------------------------
+sketchybar --bar  height=32              \
+                  position=top           \
+                  sticky=on              \
+                  padding_left=6         \
+                  padding_right=6        \
+                  color=$BAR             \
+                  border_width=0
+
+# ---------------------------------------------------------------------------
+# Default item style (inherited by every --add unless overridden)
+# ---------------------------------------------------------------------------
+sketchybar --default updates=when_shown                       \
+                     icon.font="Hack Nerd Font:Bold:14.0"     \
+                     icon.color=$ACCENT                       \
+                     label.font="Hack Nerd Font:Bold:13.0"    \
+                     label.color=$FOREGROUND                  \
+                     padding_left=3                           \
+                     padding_right=3                          \
+                     icon.padding_left=10                     \
+                     icon.padding_right=6                     \
+                     label.padding_left=0                     \
+                     label.padding_right=12                   \
+                     background.color=$PILL                   \
+                     background.corner_radius=99              \
+                     background.height=24
+
+# Items without their own pill: text shadow keeps them readable on wallpaper.
+GHOST=(
+  background.drawing=off
+  icon.shadow.drawing=on
+  icon.shadow.color=$SHADOW
+  icon.shadow.distance=1
+  label.shadow.drawing=on
+  label.shadow.color=$SHADOW
+  label.shadow.distance=1
+)
+
+# ---------------------------------------------------------------------------
+# Left side — AeroSpace workspaces 1..9
+# ---------------------------------------------------------------------------
+# Register the custom event AeroSpace triggers on workspace change. Without an
+# explicit `--add event`, --subscribe silently no-ops and the observer script
+# never fires on switch.
+sketchybar --add event aerospace_workspace_change
+
+# Each workspace: its number. The focused one gets a filled accent pill (drawn
+# by plugins/aerospace.sh).
+for sid in 1 2 3 4 5 6 7 8 9; do
+  sketchybar --add item space.$sid left                                  \
+             --set space.$sid icon="$sid"                                \
+                              icon.width=22                              \
+                              icon.align=center                          \
+                              icon.padding_left=2                        \
+                              icon.padding_right=2                       \
+                              label.drawing=off                          \
+                              padding_left=0                             \
+                              padding_right=0                            \
+                              background.color=$ACCENT                   \
+                              background.height=20                       \
+                              background.drawing=off                     \
+                              click_script="aerospace workspace $sid"
+done
+sketchybar --set space.1 padding_left=4
+sketchybar --set space.9 padding_right=4
+
+# One pill behind all workspace items.
+sketchybar --add bracket spaces '/space\.[0-9]/'   \
+           --set spaces background.color=$PILL     \
+                        background.height=24
+
+# One observer item drives ALL space indicators in a single batched script run
+# (see plugins/aerospace.sh). This avoids spawning 9 scripts per workspace
+# switch. It draws nothing itself; it just listens for the change event.
+# front_app_switched is included so empty/occupied dimming refreshes when
+# windows open/close.
+sketchybar --add item space_observer left                             \
+           --set space_observer drawing=off                           \
+                                updates=on                            \
+                                script="$PLUGIN_DIR/aerospace.sh"     \
+           --subscribe space_observer aerospace_workspace_change front_app_switched
+
+# Focused app, right after the workspaces
+sketchybar --add item front_app left                         \
+           --set front_app "${GHOST[@]}"                     \
+                           icon.drawing=off                  \
+                           padding_left=6                    \
+                           script="$PLUGIN_DIR/front_app.sh" \
+           --subscribe front_app front_app_switched
+
+# ---------------------------------------------------------------------------
+# Right side — clock, battery, Slack, RAM, CPU (each its own pill; first added is
+# rightmost)
+# ---------------------------------------------------------------------------
+sketchybar --add item clock right                       \
+           --set clock update_freq=10                   \
+                       icon=󰃰                           \
+                       script="$PLUGIN_DIR/clock.sh"
+
+sketchybar --add item battery right                       \
+           --set battery update_freq=120                  \
+                         script="$PLUGIN_DIR/battery.sh"  \
+           --subscribe battery system_woke power_source_change
+
+sketchybar --add item slack right                       \
+           --set slack update_freq=5                    \
+                       icon=                     \
+                       icon.padding_right=4             \
+                       click_script="open -a Slack"     \
+                       script="$PLUGIN_DIR/slack.sh"    \
+           --subscribe slack system_woke
+
+# plugins/system.sh runs on `cpu` and updates `ram` as well (one process/tick).
+sketchybar --add item ram right                         \
+           --set ram icon=󰍛                            \
+                     icon.padding_right=4
+
+sketchybar --add item cpu right                         \
+           --set cpu update_freq=3                      \
+                     icon=󰻠                            \
+                     icon.padding_right=4               \
+                     script="$PLUGIN_DIR/system.sh"
+
+# ---------------------------------------------------------------------------
+# Force redraw + initial workspace highlight.
+# The space_observer only runs on the aerospace_workspace_change event, which
+# does NOT fire on load — so without this trigger the bar shows no selected
+# workspace until the first manual switch (most visibly right after a restart).
+# ---------------------------------------------------------------------------
+sketchybar --update
+
+# Fire the initial highlight AFTER config load completes. Triggering inline here
+# races the event subscription (the observer isn't ready yet during load and the
+# event is dropped), so defer it to a detached subshell that waits a beat first.
+( sleep 0.5; sketchybar --trigger aerospace_workspace_change ) &
