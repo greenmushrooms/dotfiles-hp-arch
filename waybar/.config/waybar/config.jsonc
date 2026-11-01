@@ -55,7 +55,8 @@
     // interface is pinned: without it waybar latches onto wg0 the moment
     // the tunnel comes up and reports the VPN instead of the Wi-Fi.
     "network": {
-        "interface": "wlan0",
+        // Glob, not a fixed name: this card is wlp0s20f3 here, wlan0 elsewhere.
+        "interface": "wl*",
         // 1s, not 5s: a resume reconnects in well under ten seconds, so a 5s
         // poll left the bar reading "offline" long after the link was back --
         // which is what makes you reach for the picker unnecessarily.

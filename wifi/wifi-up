@@ -23,7 +23,7 @@
 # a resume from 85s to 174s.
 set -euo pipefail
 
-DEV=${WIFI_DEV:-wlan0}
+DEV=${WIFI_DEV:-$(basename "$(dirname /sys/class/net/*/wireless)" 2>/dev/null)}
 IWD=net.connman.iwd
 
 # ── iwd D-Bus helpers ───────────────────────────────────────────────
