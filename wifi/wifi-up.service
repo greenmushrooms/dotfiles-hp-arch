@@ -10,6 +10,9 @@ After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/wifi-up
+# wifi-up polls for up to 60s. Give it headroom to report its own failure
+# rather than being killed mid-nudge and logged as a timeout.
+TimeoutStartSec=90
 
 [Install]
 WantedBy=multi-user.target

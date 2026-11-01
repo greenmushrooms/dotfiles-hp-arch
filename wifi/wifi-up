@@ -1,39 +1,96 @@
 #!/usr/bin/env bash
-# wifi-up -- put Wi-Fi back in a usable state without manual intervention.
+# wifi-up -- reconnect Wi-Fi after boot or resume without a manual poke.
 #
-# Runs at boot and after every resume. Everything here is idempotent: on a
-# machine whose Wi-Fi is already up and connected it does nothing observable.
+# The radio is not the problem and never was. This AP advertises HE (Wi-Fi 6)
+# capability IEs that iwd 3.12 rejects:
+#
+#   iwd[..]: invalid HE capabilities for c0:94:35:b0:db:b6
+#   iwd[..]: wiphy_estimate_data_rate() failed
+#
+# iwd ranks autoconnect candidates by estimated data rate. When that estimate
+# fails the BSS cannot be ranked, so autoconnect silently skips it -- scan
+# after scan, for 85 to 174 seconds in measured resumes, on an access point
+# sitting at -58 dBm the entire time. It connects only when a scan happens to
+# return IEs it can parse.
+#
+# Picking the network by hand always worked instantly because that issues an
+# explicit connect, which targets one network directly and never goes through
+# ranking. This does the same thing automatically.
+#
+# Note what this deliberately does NOT do: repeatedly nudge scans. A
+# user-requested scan preempts autoconnect's own scan, so polling makes the
+# problem worse -- an earlier version of this script scanning every 4s pushed
+# a resume from 85s to 174s.
 set -euo pipefail
 
 DEV=${WIFI_DEV:-wlan0}
+IWD=net.connman.iwd
 
-# systemd-rfkill persists the soft-block state to /var/lib/systemd/rfkill and
-# restores it on the next boot, so one stray airplane-mode keypress stays
-# sticky across reboots until something explicitly clears it.
+# ── iwd D-Bus helpers ───────────────────────────────────────────────
+# The device and station interfaces share one object, whose path embeds the
+# phy and interface index -- so discover it rather than hardcoding it.
+station_path() {
+    busctl --list tree "$IWD" 2>/dev/null \
+        | grep -Ex '/net/connman/iwd/[0-9]+/[0-9]+' \
+        | head -1
+}
+
+prop() { # prop <path> <interface> <name>
+    busctl get-property "$IWD" "$1" "$2" "$3" 2>/dev/null \
+        | awk '{print $2}' | tr -d '"'
+}
+
+# systemd-rfkill restores a saved soft block on the next boot, so a stray
+# airplane-mode keypress would otherwise stay sticky across reboots.
 rfkill unblock wlan 2>/dev/null || true
 
-# iwd is still starting at boot, and after resume the device takes a moment to
-# reappear on the bus -- so poll rather than assume it is there. Powering a
-# device that is already on is a no-op, which is what makes this safe to run
-# unconditionally on every wakeup.
-powered=0
-for _ in $(seq 1 20); do
-    if iwctl device "$DEV" show >/dev/null 2>&1; then
-        if iwctl device "$DEV" set-property Powered on >/dev/null 2>&1; then
-            powered=1
-            break
-        fi
+# iwd is still starting at boot and the device is slow back onto the bus after
+# resume, so poll for it. Powering an already-on device is a no-op.
+SP=""
+for _ in $(seq 1 30); do
+    SP=$(station_path)
+    if [[ -n $SP ]] && busctl set-property "$IWD" "$SP" net.connman.iwd.Device \
+        Powered b true >/dev/null 2>&1; then
+        break
     fi
+    SP=""
     sleep 0.5
 done
 
-if [[ $powered -eq 0 ]]; then
-    echo "wifi-up: $DEV never appeared in iwd" >&2
-    exit 1
-fi
+[[ -n $SP ]] || { echo "wifi-up: no iwd station appeared for $DEV" >&2; exit 1; }
 
-# Powering on is enough for iwd to autoconnect on its own, but it resumes from
-# autoconnect_full -- a full-spectrum scan that has taken minutes here. An
-# explicit scan gets the known network back in seconds instead. It fails
-# harmlessly if a scan is already in flight or the link is already up.
-iwctl station "$DEV" scan >/dev/null 2>&1 || true
+[[ $(prop "$SP" net.connman.iwd.Station State) == connected ]] && exit 0
+
+# One scan, then wait it out. Results are useless while the radio settles, and
+# re-scanning on top of an in-flight scan is what starves autoconnect.
+busctl call "$IWD" "$SP" net.connman.iwd.Station Scan >/dev/null 2>&1 || true
+for _ in $(seq 1 40); do
+    [[ $(prop "$SP" net.connman.iwd.Station Scanning) == true ]] || break
+    sleep 0.5
+done
+
+# GetOrderedNetworks sorts by signal strength, not by the rank that the failed
+# rate estimate breaks -- so this ordering stays trustworthy. KnownNetwork is
+# readable only on networks iwd has credentials for, which makes a successful
+# property read the test for "we can connect to this".
+mapfile -t NETWORKS < <(
+    busctl call "$IWD" "$SP" net.connman.iwd.Station GetOrderedNetworks 2>/dev/null \
+        | grep -oE '"[^"]+"' | tr -d '"'
+)
+
+for net in "${NETWORKS[@]}"; do
+    busctl get-property "$IWD" "$net" net.connman.iwd.Network KnownNetwork \
+        >/dev/null 2>&1 || continue
+
+    name=$(prop "$net" net.connman.iwd.Network Name)
+    if busctl call "$IWD" "$net" net.connman.iwd.Network Connect >/dev/null 2>&1; then
+        echo "wifi-up: connected to ${name:-$net}"
+        exit 0
+    fi
+    echo "wifi-up: explicit connect to ${name:-$net} failed, trying next" >&2
+done
+
+# Falling through is not fatal: autoconnect is still running underneath and
+# will get there eventually. Say so, so the journal shows which path won.
+echo "wifi-up: no known network could be connected, leaving it to autoconnect" >&2
+exit 1

@@ -31,13 +31,49 @@ if [[ -e $DST ]]; then
     echo "backed up existing $DST"
 fi
 
-install -m 600 -o root -g root "$SRC" "$DST"
+# Re-running against the installed config is how you pick up new hooks
+# without a fresh export from the UDM -- it must not copy a file onto itself.
+if [[ $SRC -ef $DST ]]; then
+    echo "source is already $DST, patching in place"
+else
+    install -m 600 -o root -g root "$SRC" "$DST"
+fi
 
 # The UDM omits this. Without it the tunnel goes idle behind NAT and the
 # return path stops working once the router drops the mapping.
 if ! grep -q '^PersistentKeepalive' "$DST"; then
     printf 'PersistentKeepalive = 25\n' >> "$DST"
     echo "added PersistentKeepalive = 25"
+fi
+
+# ── 1b. Route the home LAN over the tunnel ──────────────────────────
+# The endpoint is your own WAN, so this tunnel gets used from other people's
+# networks -- and plenty of them hand out 192.168.1.0/24, the same range the
+# UDM serves. wg-quick's killswitch does not cover that overlap: it only
+# suppresses default routes ("suppress_prefixlength 0"), so the local on-link
+# /24 still wins and every home host looks like a neighbour that never
+# answers ARP. wg-lan-route puts the LAN on wg0 at metric 0 and keeps exactly
+# one host route to the local gateway, so the tunnel keeps its transport.
+LAN=${WG_LAN:-192.168.1.0/24}
+install -m 755 -o root -g root "$(dirname "$0")/wg-lan-route" /usr/local/bin/wg-lan-route
+echo "installed /usr/local/bin/wg-lan-route"
+
+if grep -q wg-lan-route "$DST"; then
+    echo "wg-lan-route hooks already in $DST"
+else
+    # The hooks belong to [Interface], so they go in ahead of [Peer].
+    awk -v lan="$LAN" '
+        function hooks() {
+            print "PostUp = /usr/local/bin/wg-lan-route up %i " lan
+            print "PostDown = /usr/local/bin/wg-lan-route down %i " lan
+        }
+        !placed && /^\[Peer\]/ { hooks(); print ""; placed = 1 }
+        { print }
+        END { if (!placed) hooks() }
+    ' "$DST" > "$DST.new"
+    install -m 600 -o root -g root "$DST.new" "$DST"
+    rm -f "$DST.new"
+    echo "added wg-lan-route hooks for $LAN"
 fi
 
 wg-quick strip wg0 >/dev/null && echo "config parses clean"
@@ -71,7 +107,11 @@ else
 fi
 
 # ── 4. Remove the world-readable copy holding the private key ───────
-shred -u "$SRC" && echo "shredded $SRC"
+if [[ $SRC -ef $DST ]]; then
+    echo "kept $DST (nothing extra to shred)"
+else
+    shred -u "$SRC" && echo "shredded $SRC"
+fi
 
 echo
 echo "Done. Not enabled at boot on purpose: the endpoint is your own WAN,"

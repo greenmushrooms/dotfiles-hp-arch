@@ -1,4 +1,12 @@
+/* Address bar is hidden. Ctrl+L (or F6) reveals it — mozilla.cfg sets the
+   navbar-visible attribute before Firefox focuses the bar, because a
+   display:none element cannot take focus. Escape or leaving the bar hides it
+   again. display:none rather than a zero-height collapse is deliberate: since
+   Firefox 153 the urlbar is a popover, so it renders in the top layer and
+   ignores an ancestor's overflow, opacity and pointer-events. */
 #nav-bar { display: none !important; }
+:root[navbar-visible] #nav-bar { display: flex !important; }
+
 #import-button { display: none !important; }
 
 /* Square, compact tabs */

@@ -2,7 +2,7 @@
 
 ## Inspiron 3501 HDMI cap (2026-05-15)
 
-dDell Inspiron 3501 (TigerLake i7-1165G7, Iris Xe, PCI 8086:9a49) HDMI port is **HDMI 1.4, hard-capped at 1920x1080@60** per Dell official spec. Motherboard-level limit, not GPU/cable.
+Dell Inspiron 3501 (TigerLake i7-1165G7, Iris Xe, PCI 8086:9a49) HDMI port is **HDMI 1.4, hard-capped at 1920x1080@60** per Dell official spec. Motherboard-level limit, not GPU/cable.
 
 External LG UltraGear (3440x1440 native, serial 010NTEPA5588) over HDMI from this laptop will only ever do 1080p. Cable + monitor work fine on other machines with HDMI 2.0+ ports.
 
