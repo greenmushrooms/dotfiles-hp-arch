@@ -4,7 +4,7 @@
     "spacing": 6,
 
     "modules-left": [
-        "hyprland/workspaces"
+        "ext/workspaces"
     ],
     "modules-center": [
         "hyprland/window"
@@ -21,11 +21,16 @@
     ],
 
     // ── Workspaces ──────────────────────────────────────────────
-    "hyprland/workspaces": {
+    // ext/workspaces, not hyprland/workspaces: on Hyprland's Lua config the
+    // latter still sends old-style "dispatch workspace N", which Hyprland
+    // rejects, so clicks did nothing (Waybar #5008, fixed after 0.15.0).
+    // The scroll commands likewise need the Lua dispatcher syntax.
+    "ext/workspaces": {
         "format": "{id}",
-        "on-scroll-up": "hyprctl dispatch workspace e+1",
-        "on-scroll-down": "hyprctl dispatch workspace e-1",
-        "all-outputs": true
+        "on-click": "activate",
+        "sort-by-id": true,
+        "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'",
+        "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'"
     },
 
     // ── Active window title ──────────────────────────────────────
