@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# wg-lan-route — pull a remote LAN into the tunnel even when the local
+# network numbers itself out of the same range.
+#
+#   wg-lan-route up   <iface> <cidr>
+#   wg-lan-route down <iface> <cidr>
+#
+# wg-quick's killswitch only suppresses *default* routes from the main
+# table ("suppress_prefixlength 0"), so the on-link /24 that DHCP installs
+# for whatever wifi you are on still wins for every address inside it.
+# When that wifi is 192.168.1.0/24 and so is home, every home host looks
+# like a local neighbour, ARP goes unanswered, and you get
+# "Destination Host Unreachable" from your own address.
+#
+# Fix: install the remote LAN on the tunnel at metric 0 (beats DHCP's
+# metric 304) and keep exactly one hole — a host route to the local
+# gateway, so the encrypted packets still have a way off this machine.
+# Without that hole the tunnel would carry its own transport and die.
+set -uo pipefail
+
+action=${1:?usage: wg-lan-route up|down <iface> <cidr>}
+iface=${2:?missing interface}
+lan=${3:?missing cidr}
+state=/run/wg-lan-route.$iface
+
+ip2int() {
+    local IFS=. a b c d
+    read -r a b c d <<<"$1"
+    echo $(( (a << 24) | (b << 16) | (c << 8) | d ))
+}
+
+# in_net <ipv4> <cidr>
+in_net() {
+    local ip=$1 net=${2%/*} bits=${2#*/} mask
+    [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
+    (( bits == 0 )) && return 0
+    mask=$(( (0xFFFFFFFF << (32 - bits)) & 0xFFFFFFFF ))
+    (( ($(ip2int "$ip") & mask) == ($(ip2int "$net") & mask) ))
+}
+
+# The default route that is not ours -- the physical path to the endpoint.
+phys() { ip -4 route show default | grep -v " dev $iface" | head -1; }
+field() { awk -v k="$1" '{ for (i = 1; i < NF; i++) if ($i == k) print $(i + 1) }'; }
+
+# Remember only what we created, so teardown never deletes someone else's
+# route. Kept across repeat "up" calls -- /run clears itself on reboot.
+remember() {
+    touch "$state" && chmod 600 "$state"
+    grep -qxF "$1" "$state" 2>/dev/null || echo "$1" >> "$state"
+}
+
+case $action in
+up)
+    line=$(phys)
+    gw=$(field via <<<"$line")
+    dev=$(field dev <<<"$line")
+
+    if [[ -n $gw && -n $dev ]] && in_net "$gw" "$lan"; then
+        # Only punch the hole if nothing already claims that /32.
+        if [[ -z $(ip -4 route show "$gw/32" dev "$dev" 2>/dev/null) ]]; then
+            if ip route add "$gw/32" dev "$dev" scope link; then
+                remember "$gw/32 dev $dev"
+                echo "wg-lan-route: kept $gw on $dev so $iface can reach its endpoint"
+            fi
+        fi
+    fi
+
+    # An endpoint inside the range we are about to swallow would route into
+    # the tunnel it carries. Pin it to the physical path first.
+    ep=$(wg show "$iface" endpoints 2>/dev/null | awk '{print $2}')
+    ep=${ep%:*}
+    if [[ -n $ep && -n $gw && -n $dev ]] && in_net "$ep" "$lan"; then
+        if ip route add "$ep/32" via "$gw" dev "$dev"; then
+            remember "$ep/32 via $gw dev $dev"
+            echo "wg-lan-route: pinned endpoint $ep to $dev"
+        fi
+    fi
+
+    ip route replace "$lan" dev "$iface" scope link metric 0 \
+        && echo "wg-lan-route: $lan now goes over $iface"
+    ;;
+down)
+    # The tunnel's own routes leave with the interface; these do not.
+    ip route del "$lan" dev "$iface" metric 0 2>/dev/null
+    if [[ -f $state ]]; then
+        while read -r route; do
+            [[ -n $route ]] && ip route del $route 2>/dev/null
+        done < "$state"
+        rm -f "$state"
+    fi
+    ;;
+*)
+    echo "usage: wg-lan-route up|down <iface> <cidr>" >&2
+    exit 2
+    ;;
+esac
+
+exit 0

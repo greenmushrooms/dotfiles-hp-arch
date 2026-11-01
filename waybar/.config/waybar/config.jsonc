@@ -12,6 +12,8 @@
     "modules-right": [
         "cpu",
         "memory",
+        "network",
+        "custom/vpn",
         "pulseaudio",
         "battery",
         "clock",
@@ -47,6 +49,36 @@
         "format": "{}% ",
         "tooltip": true,
         "tooltip-format": "RAM  {percentage}%\n\nUsed:      {used:0.1f} GiB\nAvailable: {avail:0.1f} GiB\nTotal:     {total:0.1f} GiB\n\nSwap: {swapUsed:0.1f} / {swapTotal:0.1f} GiB"
+    },
+
+    // ── Network ─────────────────────────────────────────────────
+    // interface is pinned: without it waybar latches onto wg0 the moment
+    // the tunnel comes up and reports the VPN instead of the Wi-Fi.
+    "network": {
+        "interface": "wlan0",
+        // 1s, not 5s: a resume reconnects in well under ten seconds, so a 5s
+        // poll left the bar reading "offline" long after the link was back --
+        // which is what makes you reach for the picker unnecessarily.
+        "interval": 1,
+        "format-wifi": "{icon}  {essid}",
+        // Associated but no IP yet. Without this the DHCP window also reads as
+        // "offline", when it is really the last second of coming back.
+        "format-linked": "  connecting",
+        "format-disconnected": "  offline",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip-format-wifi": "{essid}   {signalStrength}%\n{ipaddr}/{cidr}\nvia {gwaddr}   ·   {frequency} GHz\n\nClick for the Wi-Fi picker\nRight-click for iwgtk",
+        "tooltip-format-disconnected": "No Wi-Fi\n\nClick for the Wi-Fi picker",
+        "on-click": "/home/slava/.local/bin/wifi-menu",
+        "on-click-right": "iwgtk"
+    },
+
+    // ── VPN ──────────────────────────────────────────────────────
+    "custom/vpn": {
+        "exec": "/home/slava/.local/bin/vpn json",
+        "return-type": "json",
+        "interval": 5,
+        "on-click": "/home/slava/.local/bin/vpn toggle",
+        "tooltip": true
     },
 
     // ── Audio ────────────────────────────────────────────────────

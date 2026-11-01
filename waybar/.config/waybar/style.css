@@ -69,6 +69,8 @@ window#waybar {
 
 #cpu,
 #memory,
+#network,
+#custom-vpn,
 #pulseaudio,
 #battery,
 #clock,
@@ -80,6 +82,8 @@ window#waybar {
 /* subtle left separator between right modules */
 #cpu,
 #memory,
+#network,
+#custom-vpn,
 #pulseaudio,
 #battery,
 #clock {
@@ -94,6 +98,32 @@ window#waybar {
 
 #memory {
     color: #bb9af7;
+}
+
+#network {
+    color: #7dcfff;
+}
+
+#network.disconnected {
+    color: #f7768e;
+}
+
+/* VPN: green = handshake fresh, dim = off, orange = interface up but the
+   peer has gone quiet, red = the unit failed to start. */
+#custom-vpn.up {
+    color: #9ece6a;
+}
+
+#custom-vpn.down {
+    color: #565f89;
+}
+
+#custom-vpn.stale {
+    color: #ff9e64;
+}
+
+#custom-vpn.failed {
+    color: #f7768e;
 }
 
 #pulseaudio {

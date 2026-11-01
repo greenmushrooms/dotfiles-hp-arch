@@ -18,3 +18,4 @@
 # them for future reference.
 
 $env.PATH = ($env.PATH | split row (char esep) | prepend "/home/slava/.opencode/bin")
+$env.PATH = ($env.PATH | prepend ($env.HOME | path join ".local" "bin"))
