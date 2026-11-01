@@ -123,21 +123,54 @@ Services.obs.addObserver(win => {
     }, 60);
   };
 
+  let showNavBar = source => {
+    if (root.hasAttribute("navbar-visible")) {
+      return;
+    }
+    root.setAttribute("navbar-visible", "true");
+    // Force a synchronous reflow so the toolbar has real geometry before
+    // Firefox measures it.
+    navBar.getBoundingClientRect();
+    debug("openLocation", { source, navBar: rect(navBar) });
+    win.requestAnimationFrame(() =>
+      win.requestAnimationFrame(repositionUrlbar)
+    );
+    win.setTimeout(repositionUrlbar, 120);
+    // If Firefox's own handler already ran (and failed to focus a hidden bar),
+    // focus it ourselves once it is visible.
+    win.setTimeout(() => {
+      if (win.gURLBar && !win.gURLBar.focused) {
+        win.gURLBar.select();
+      }
+    }, 0);
+  };
+
+  // Old path: the Browser:OpenLocation <command>. Firefox 159 no longer
+  // reliably fires a "command" event for it, so this alone is not enough.
   doc.addEventListener(
     "command",
     event => {
-      if (event.target.id !== "Browser:OpenLocation") {
-        return;
+      if (event.target.id === "Browser:OpenLocation") {
+        showNavBar("command");
       }
-      root.setAttribute("navbar-visible", "true");
-      // Force a synchronous reflow so the toolbar has real geometry before
-      // Firefox measures it.
-      navBar.getBoundingClientRect();
-      debug("openLocation", { navBar: rect(navBar) });
-      win.requestAnimationFrame(() =>
-        win.requestAnimationFrame(repositionUrlbar)
-      );
-      win.setTimeout(repositionUrlbar, 120);
+    },
+    true
+  );
+
+  // Robust path: catch the keys themselves before any shortcut handler.
+  // Ctrl+L, Alt+D and F6 are the standard "focus location bar" shortcuts.
+  win.addEventListener(
+    "keydown",
+    event => {
+      let key = event.key.toLowerCase();
+      let ctrlL =
+        key === "l" && event.ctrlKey && !event.altKey && !event.shiftKey;
+      let altD =
+        key === "d" && event.altKey && !event.ctrlKey && !event.shiftKey;
+      let f6 = event.key === "F6" && !event.ctrlKey && !event.altKey;
+      if (ctrlL || altD || f6) {
+        showNavBar("keydown");
+      }
     },
     true
   );
