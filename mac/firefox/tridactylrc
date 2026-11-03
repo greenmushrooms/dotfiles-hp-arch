@@ -1,0 +1,9 @@
+" newtab is handled by mozilla.cfg autoconfig, not Tridactyl
+" using the no-new-tab variant of Tridactyl
+
+" Disable Tridactyl on pages where it interferes with native UI.
+" addons.mozilla.org: Tridactyl's key/focus handling dismisses the
+" extension install permission prompt before it can be confirmed.
+autocmd DocStart addons.mozilla.org mode ignore
+" Stylus's own pages (settings, editor) — let them use normal keys
+autocmd DocStart .*moz-extension://.*stylus.* mode ignore

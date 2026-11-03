@@ -1,0 +1,16 @@
+-- Loads each plugin's config in dependency order.
+-- vim.pack.add (in init.lua) handles installation; these files only configure.
+require("plugins.colors")
+require("plugins.telescope")
+require("plugins.harpoon")
+require("plugins.neotree")
+require("plugins.treesitter")
+require("plugins.fugitive")
+require("plugins.lsp")
+require("plugins.neotest")
+require("plugins.cloak")
+require("plugins.neogen")
+require("plugins.trouble")
+require("plugins.undotree")
+require("plugins.zenmode")
+require("plugins.opencode")

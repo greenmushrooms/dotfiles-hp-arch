@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      Serves firefox/home over http://localhost:8347 so the Firefox home/new-tab
+      page is an http:// URL instead of file://. Firefox refuses to inject
+      WebExtension content scripts (Tridactyl) into file:// pages, so the home
+      page must be served over http for Tridactyl keybindings to work there.
+      Bound to 127.0.0.1 only — not reachable off this machine.
+      @FIREFOX_HOME_DIR@ is filled in by install.sh.
+    -->
+    <key>Label</key>
+    <string>local.firefox-home-server</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>-m</string>
+        <string>http.server</string>
+        <string>8347</string>
+        <string>--bind</string>
+        <string>127.0.0.1</string>
+        <string>--directory</string>
+        <string>@FIREFOX_HOME_DIR@</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/firefox-home-server.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/firefox-home-server.log</string>
+</dict>
+</plist>

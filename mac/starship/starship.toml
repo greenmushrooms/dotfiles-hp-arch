@@ -1,0 +1,44 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Minimal, dev/data-focused prompt.
+# Symlinked to ~/.config/starship.toml (see repo README).
+add_newline = true
+
+format = """
+$directory\
+$git_branch\
+$git_status\
+$python\
+$cmd_duration\
+$line_break\
+$character"""
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+style = "bold cyan"
+read_only = " "
+
+[git_branch]
+symbol = " "
+style = "bold purple"
+
+[git_status]
+style = "bold yellow"
+
+# Show the active Python version/venv (pairs with the auto-venv hook in config.nu).
+[python]
+symbol = " "
+style = "bold green"
+format = 'via [${symbol}${pyversion}(\($virtualenv\))]($style) '
+
+# Only surface command duration for anything that took a noticeable moment.
+[cmd_duration]
+min_time = 500
+format = "took [$duration]($style) "
+style = "bold yellow"
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vicmd_symbol = "[❮](bold green)"

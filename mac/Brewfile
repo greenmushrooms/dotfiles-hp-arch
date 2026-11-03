@@ -1,0 +1,49 @@
+# Everything the configs in this repo depend on. `brew bundle` (run by
+# install.sh) installs whatever is missing and skips the rest.
+#
+# Prerequisite not covered here: Xcode Command Line Tools
+# (`xcode-select --install`) — provides git for Homebrew and /usr/bin/python3
+# for the Firefox home-page server.
+
+tap "nikitabobko/tap"     # AeroSpace
+tap "felixkratz/formulae" # SketchyBar, JankyBorders
+
+# --- Desktop: window manager, menu bar, focus border -----------------------
+cask "nikitabobko/tap/aerospace"
+brew "felixkratz/formulae/sketchybar"
+brew "felixkratz/formulae/borders"
+
+# --- Terminal + shell --------------------------------------------------------
+cask "ghostty"
+brew "nushell"
+brew "starship"
+brew "fzf"     # nushell Ctrl+F file picker
+brew "yazi"    # nushell Ctrl+E file manager (`y`)
+brew "uv"      # Python venvs (auto-activated by the nushell PWD hook)
+
+# --- Editor ------------------------------------------------------------------
+brew "neovim"          # 0.12+ (native vim.pack, vim.lsp.enable, inline completion)
+brew "tree-sitter-cli" # nvim-treesitter `main` compiles parsers with it
+brew "ripgrep"         # Telescope live grep
+brew "node"            # mason installs pyright + copilot-language-server as npm packages
+brew "go"              # gopls / neotest-go
+brew "opencode"        # opencode.nvim (<leader>o…)
+# vim.lsp.enable() also lists these; uncomment if you write Go / Lua:
+# brew "gopls"
+# brew "lua-language-server"
+
+# --- Git ---------------------------------------------------------------------
+brew "git"
+brew "gh"
+
+# --- Fonts -------------------------------------------------------------------
+cask "font-hack-nerd-font"      # SketchyBar icons/labels, Starship symbols
+cask "font-meslo-lg-nerd-font"  # Ghostty (MesloLGM Nerd Font)
+
+# --- Apps bound to AeroSpace launchers ---------------------------------------
+# Firefox goes in ~/Applications so install.sh can write the autoconfig files
+# into the app bundle without sudo.
+cask "firefox", args: { appdir: "~/Applications" } # alt-b
+cask "zed"                                          # alt-z
+cask "slack"                                        # alt-s, SketchyBar badge
+cask "1password"                                    # floats under AeroSpace

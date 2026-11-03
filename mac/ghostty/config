@@ -1,0 +1,33 @@
+# Ghostty configuration
+
+# Shell
+shell-integration = detect
+command = /opt/homebrew/bin/nu
+working-directory = ~/projects
+
+# Quake mode (dropdown terminal)
+keybind = global:cmd+grave_accent=toggle_quick_terminal
+quick-terminal-position = top
+quick-terminal-size = 100%,40%
+quick-terminal-animation-duration = 0.1
+
+# Font
+font-family = "MesloLGM Nerd Font"
+font-size = 13
+
+# Theme
+background = #1a1b26
+foreground = #c0caf5
+cursor-color = #c0caf5
+
+# Window
+window-padding-x = 10
+window-padding-y = 10
+window-decoration = true
+# Don't restore the previous session's tabs/surfaces on launch.
+# (Was causing a stale `notes.txt; exit` tab to reappear alongside the
+#  fresh nvim tab from the AeroSpace alt-n binding.)
+window-save-state = never
+
+# Misc
+confirm-close-surface = false

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dotfiles_clean: setup &amp; shortcuts</title>
+<style>
+  :root {
+    --bg: #1a1b26; --panel: #24283b; --line: #3b4261;
+    --fg: #c0caf5; --dim: #8089b3; --accent: #89b4fa; --warm: #e0af68; --green: #9ece6a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 1180px; margin: 0 auto; padding: 24px 28px 60px;
+  }
+  h1 { font-size: 1.9em; margin: 0 0 4px; }
+  h1 + p { color: var(--dim); margin-top: 0; }
+  h2 {
+    margin-top: 42px; padding-bottom: 6px; color: var(--accent);
+    border-bottom: 1px solid var(--line);
+  }
+  h3 {
+    margin: 22px 0 8px; color: var(--warm);
+    font-size: .82em; text-transform: uppercase; letter-spacing: .07em;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: ui-monospace, "MesloLGM Nerd Font", Menlo, monospace; font-size: .88em; }
+  code { background: var(--panel); padding: 1px 5px; border-radius: 4px; }
+  pre {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 16px; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; }
+  pre .c { color: var(--dim); }
+  kbd {
+    display: inline-block; min-width: 1.6em; text-align: center;
+    background: #2f3549; color: #e5e9ff; border: 1px solid #4a5175; border-bottom-width: 2px;
+    border-radius: 5px; padding: 0 6px; margin: 1px 1px;
+    font: 600 .8em/1.6 ui-monospace, Menlo, monospace;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 4px 0 10px; }
+  th { text-align: left; color: var(--dim); font-weight: 600; font-size: .85em; border-bottom: 1px solid var(--line); padding: 6px 10px; }
+  td { padding: 5px 10px; vertical-align: top; border-bottom: 1px solid #23273a; }
+  td.k { white-space: nowrap; width: 1%; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 36px; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+  .note { color: var(--dim); font-size: .92em; }
+  .toc { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 14px 0 0; padding: 10px 14px; background: var(--panel); border-radius: 8px; }
+  .toc a { font-size: .92em; }
+  ol li, ul li { margin: 3px 0; }
+  .pill { color: var(--green); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>dotfiles_clean</h1>
+<p>A keyboard-driven macOS desktop, rebuilt in one command: AeroSpace tiling, SketchyBar, a focus border, Ghostty + Nushell + Starship, Neovim, and a vim-mode Firefox. This repo is only the portable, ease-of-use layer: no work config, credentials, or cloud wrappers.</p>
+
+<nav class="toc">
+  <a href="#install">Install</a>
+  <a href="#programs">Programs</a>
+  <a href="#aerospace">AeroSpace</a>
+  <a href="#bar">SketchyBar</a>
+  <a href="#terminal">Ghostty &amp; Nushell</a>
+  <a href="#nvim">Neovim</a>
+  <a href="#firefox">Firefox &amp; Tridactyl</a>
+  <a href="#layout">Repo layout</a>
+  <a href="#changing">Changing things</a>
+</nav>
+
+<!-- ====================================================================== -->
+<h2 id="install">Install (repeatable)</h2>
+<pre><code>xcode-select --install          <span class="c"># once: git + /usr/bin/python3</span>
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"   <span class="c"># once: Homebrew</span>
+git clone &lt;this repo&gt; ~/projects/dotfiles_clean
+cd ~/projects/dotfiles_clean
+./install.sh --dry-run          <span class="c"># see what it would change</span>
+./install.sh</code></pre>
+
+<p>You can run <code>install.sh</code> again at any time. Correct links and files report <span class="pill">ok</span>. Anything else in the way is moved to <code>&lt;name&gt;.bak.&lt;timestamp&gt;</code>, never deleted.</p>
+<ol>
+  <li><b><code>brew bundle</code></b>: installs anything in <code>Brewfile</code> that's missing.</li>
+  <li><b>Symlinks</b> every config into place, so edits in the repo are live.</li>
+  <li><b>Services</b>: starts or restarts SketchyBar and JankyBorders, and launches or reloads AeroSpace.</li>
+  <li><b>Firefox</b>: autoconfig into the app bundle; <code>user.js</code> and <code>userChrome</code>/<code>userContent.css</code> into the active profile; a LaunchAgent serving the start page on <code>localhost:8347</code>; Tridactyl's native messenger and extension.</li>
+</ol>
+<p class="note">Flags: <code>--dry-run</code> (change nothing), <code>--no-brew</code> (configs only).</p>
+
+<h3>Manual steps that macOS won't let a script do</h3>
+<ul>
+  <li>System Settings → Privacy &amp; Security → <b>Accessibility</b> → allow <b>AeroSpace</b>.</li>
+  <li>System Settings → Control Center → <i>Automatically hide and show the menu bar</i> → <b>Always</b>, so SketchyBar takes the strip.</li>
+  <li>Optional: <code>./macos/defaults.sh</code> (Mission Control groups by app, one Space across displays, hidden menu bar). Log out afterwards.</li>
+  <li>First <code>nvim</code> launch clones the plugins. Then run <code>:CopilotSignIn</code> if you want Copilot.</li>
+  <li>After a <b>Firefox update</b>, re-run <code>./install.sh</code>, because the update replaces the app bundle and the autoconfig with it.</li>
+</ul>
+
+<!-- ====================================================================== -->
+<h2 id="programs">Programs this setup depends on</h2>
+<p class="note">Everything here is in the <code>Brewfile</code>.</p>
+<table>
+  <tr><th>Program</th><th>What it does here</th><th>Brew</th><th>Repo config → installed at</th><th>Reload</th></tr>
+  <tr><td><b>AeroSpace</b></td><td>Tiling window manager, all window/workspace hotkeys</td><td><code>cask nikitabobko/tap/aerospace</code></td><td><code>aerospace/aerospace.toml</code> → <code>~/.aerospace.toml</code></td><td><kbd>ctrl</kbd><kbd>alt</kbd><kbd>cmd</kbd><kbd>R</kbd></td></tr>
+  <tr><td><b>SketchyBar</b></td><td>Menu bar: workspaces, focused app, CPU/RAM, Slack, battery, clock</td><td><code>felixkratz/formulae/sketchybar</code></td><td><code>sketchybar/</code> → <code>~/.config/sketchybar</code></td><td><code>brew services restart sketchybar</code></td></tr>
+  <tr><td><b>JankyBorders</b></td><td>Blue border on the focused window</td><td><code>felixkratz/formulae/borders</code></td><td><code>borders/</code> → <code>~/.config/borders</code></td><td><code>brew services restart borders</code></td></tr>
+  <tr><td><b>Ghostty</b></td><td>Terminal + quake drop-down</td><td><code>cask ghostty</code></td><td><code>ghostty/</code> → <code>~/.config/ghostty</code></td><td><kbd>cmd</kbd><kbd>shift</kbd><kbd>,</kbd></td></tr>
+  <tr><td><b>Nushell</b></td><td>Shell: vi mode, fzf/yazi keys, auto-venv, banner</td><td><code>nushell</code></td><td><code>nushell/*.nu</code> → <code>~/Library/Application Support/nushell/</code></td><td>new shell</td></tr>
+  <tr><td><b>Starship</b></td><td>Prompt: dir, git, python/venv, duration</td><td><code>starship</code></td><td><code>starship/starship.toml</code> → <code>~/.config/starship.toml</code></td><td>next prompt</td></tr>
+  <tr><td><b>Neovim</b> 0.12+</td><td>Editor, native <code>vim.pack</code> and LSP</td><td><code>neovim</code></td><td><code>nvim/</code> → <code>~/.config/nvim</code></td><td><code>:restart</code></td></tr>
+  <tr><td><b>Firefox</b></td><td>Hidden nav bar, local start page, Tridactyl</td><td><code>cask firefox</code> (→ <code>~/Applications</code>)</td><td><code>firefox/</code> → app bundle + profile (copied)</td><td>restart</td></tr>
+  <tr><td><b>Tridactyl</b> (No New Tab)</td><td>Vim keys in Firefox</td><td>opened by <code>install.sh</code></td><td><code>firefox/tridactylrc</code> → <code>~/.config/tridactyl/</code></td><td><code>:source</code></td></tr>
+  <tr><td><b>Zed</b></td><td>Second editor</td><td><code>cask zed</code></td><td>—</td><td>—</td></tr>
+  <tr><td><b>Slack</b></td><td>Launcher + unread badge in the bar</td><td><code>cask slack</code></td><td>—</td><td>—</td></tr>
+  <tr><td><b>1Password</b></td><td>Floats instead of tiling</td><td><code>cask 1password</code></td><td>—</td><td>—</td></tr>
+</table>
+
+<h3>Supporting tools</h3>
+<div class="cols">
+<table>
+  <tr><td class="k"><code>fzf</code></td><td>Nushell <kbd>ctrl</kbd><kbd>F</kbd> file picker</td></tr>
+  <tr><td class="k"><code>yazi</code></td><td>Nushell <kbd>ctrl</kbd><kbd>E</kbd> / <code>y</code> file manager</td></tr>
+  <tr><td class="k"><code>uv</code></td><td>Python venvs (auto-activated on <code>cd</code>)</td></tr>
+  <tr><td class="k"><code>ripgrep</code></td><td>Telescope grep</td></tr>
+  <tr><td class="k"><code>tree-sitter-cli</code></td><td>nvim-treesitter parser builds</td></tr>
+  <tr><td class="k"><code>node</code></td><td>mason's <code>pyright</code> and <code>copilot-language-server</code></td></tr>
+</table>
+<table>
+  <tr><td class="k"><code>go</code></td><td>Go tooling (<code>gopls</code> / <code>lua-language-server</code> are commented out in the Brewfile)</td></tr>
+  <tr><td class="k"><code>opencode</code></td><td>opencode.nvim</td></tr>
+  <tr><td class="k"><code>git</code>, <code>gh</code></td><td>git + GitHub auth</td></tr>
+  <tr><td class="k"><code>font-hack-nerd-font</code></td><td>SketchyBar + Starship icons</td></tr>
+  <tr><td class="k"><code>font-meslo-lg-nerd-font</code></td><td>Ghostty font</td></tr>
+  <tr><td class="k"><code>/usr/bin/python3</code></td><td>Start-page server (Xcode CLT)</td></tr>
+</table>
+</div>
+
+<!-- ====================================================================== -->
+<h2 id="aerospace">AeroSpace</h2>
+<p class="note"><kbd>alt</kbd> is the base. Everything is a held chord, with no modes to get stuck in. Plain <kbd>ctrl</kbd> is never taken, so it stays free for nvim and the shell.</p>
+<div class="cols">
+  <div>
+    <h3>Workspaces</h3>
+    <table>
+      <tr><td class="k"><kbd>alt</kbd><kbd>1</kbd>…<kbd>9</kbd></td><td>Go to workspace N</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>shift</kbd><kbd>1</kbd>…<kbd>9</kbd></td><td>Send window to N and follow</td></tr>
+    </table>
+    <h3>Focus &amp; move</h3>
+    <table>
+      <tr><td class="k"><kbd>alt</kbd><kbd>shift</kbd><kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd></td><td>Focus left / down / up / right</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>↑</kbd><kbd>→</kbd></td><td>Focus (arrows)</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd></td><td>Move window in the layout</td></tr>
+    </table>
+    <h3>Resize (hold)</h3>
+    <table>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>alt</kbd><kbd>h</kbd> / <kbd>l</kbd></td><td>Narrower / wider</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>alt</kbd><kbd>j</kbd> / <kbd>k</kbd></td><td>Shorter / taller</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>alt</kbd><kbd>0</kbd></td><td>Equalize sizes</td></tr>
+    </table>
+    <h3>Multi-monitor</h3>
+    <table>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>alt</kbd><kbd>cmd</kbd><kbd>h</kbd> / <kbd>l</kbd></td><td>Focus monitor left / right</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>shift</kbd><kbd>alt</kbd><kbd>h</kbd> / <kbd>l</kbd></td><td>Move window to monitor</td></tr>
+    </table>
+  </div>
+  <div>
+    <h3>Launch</h3>
+    <table>
+      <tr><td class="k"><kbd>alt</kbd><kbd>T</kbd></td><td>Ghostty</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>B</kbd></td><td>Firefox (new window)</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>Z</kbd></td><td>Zed</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>E</kbd></td><td>Finder at <code>~</code></td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>S</kbd></td><td>Slack</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>N</kbd></td><td>Quick notes: <code>nvim ~/Documents/notes.txt</code></td></tr>
+    </table>
+    <h3>Layout &amp; window</h3>
+    <table>
+      <tr><td class="k"><kbd>alt</kbd><kbd>/</kbd></td><td>Tiles: horizontal ⇄ vertical</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>,</kbd></td><td>Accordion (stacked)</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>shift</kbd><kbd>space</kbd></td><td>Toggle floating</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>F</kbd></td><td>Fullscreen (keeps its place in the layout)</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>Q</kbd></td><td>Close window (quit app if last)</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>alt</kbd><kbd>cmd</kbd><kbd>R</kbd></td><td>Reload config</td></tr>
+    </table>
+    <p class="note">Finder, System Settings, and 1Password always float.</p>
+  </div>
+</div>
+
+<!-- ====================================================================== -->
+<h2 id="bar">SketchyBar &amp; borders</h2>
+<table>
+  <tr><td class="k">Workspace numbers</td><td>Click to switch. Blue pill = focused, bright = has windows, dim = empty</td></tr>
+  <tr><td class="k">Slack icon</td><td>Unread count, red when &gt; 0, <code>•</code> for unreads without mentions. Click opens Slack</td></tr>
+  <tr><td class="k">CPU / RAM</td><td>Red at ≥ 80% / ≥ 85% (RAM = Activity Monitor's "Memory Used")</td></tr>
+  <tr><td class="k">Blue border</td><td>The focused window (JankyBorders)</td></tr>
+</table>
+
+<!-- ====================================================================== -->
+<h2 id="terminal">Ghostty &amp; Nushell</h2>
+<div class="cols">
+  <div>
+    <h3>Ghostty</h3>
+    <table>
+      <tr><td class="k"><kbd>cmd</kbd><kbd>`</kbd></td><td>Toggle quake drop-down (global, from any app)</td></tr>
+      <tr><td class="k"><kbd>cmd</kbd><kbd>shift</kbd><kbd>,</kbd></td><td>Reload Ghostty config</td></tr>
+    </table>
+    <p class="note">Opens Nushell in <code>~/projects</code>.</p>
+  </div>
+  <div>
+    <h3>Nushell (vi mode)</h3>
+    <table>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>F</kbd></td><td>fzf files, insert pick at cursor</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>E</kbd> / <code>y</code></td><td>yazi, <code>cd</code> to where you quit</td></tr>
+      <tr><td class="k"><kbd>esc</kbd> / <kbd>i</kbd></td><td>Normal / insert (prompt <code>❮</code> / <code>❯</code>)</td></tr>
+      <tr><td class="k"><code>projects</code></td><td><code>cd ~/projects</code></td></tr>
+      <tr><td class="k"><code>brew-up</code></td><td><code>brew upgrade</code> and fix up AeroSpace/SketchyBar</td></tr>
+      <tr><td class="k"><code>applefetch</code></td><td>Redraw the startup banner</td></tr>
+      <tr><td class="k"><code>cd</code> into a project</td><td>Nearest <code>.venv</code> auto-activates</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ====================================================================== -->
+<h2 id="nvim">Neovim</h2>
+<p class="note">Leader is <kbd>space</kbd>.</p>
+<div class="cols">
+  <div>
+    <h3>Find &amp; navigate</h3>
+    <table>
+      <tr><td class="k"><kbd>␣</kbd><kbd>pf</kbd></td><td>Find files (incl. hidden)</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>P</kbd></td><td>Git files</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>ps</kbd></td><td>Grep (prompt)</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>pws</kbd> / <kbd>pWs</kbd></td><td>Grep word / WORD under cursor</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>vh</kbd></td><td>Help tags</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>pv</kbd></td><td>netrw explorer</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>px</kbd></td><td>Neo-tree sidebar</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>a</kbd></td><td>Harpoon: add file</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>E</kbd></td><td>Harpoon: menu</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>1</kbd>…<kbd>5</kbd></td><td>Harpoon: slot N (shown in tabline)</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>K</kbd> / <kbd>J</kbd></td><td>Quickfix next / prev</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>k</kbd> / <kbd>j</kbd></td><td>Loclist next / prev</td></tr>
+    </table>
+    <h3>Edit</h3>
+    <table>
+      <tr><td class="k">visual <kbd>J</kbd> / <kbd>K</kbd></td><td>Move selection down / up</td></tr>
+      <tr><td class="k"><kbd>J</kbd></td><td>Join lines, cursor stays</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>D</kbd> <kbd>ctrl</kbd><kbd>U</kbd> <kbd>n</kbd> <kbd>N</kbd></td><td>Jumps, recentred</td></tr>
+      <tr><td class="k">visual <kbd>␣</kbd><kbd>p</kbd></td><td>Paste over, keep register</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>y</kbd> / <kbd>Y</kbd></td><td>Yank to system clipboard</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>d</kbd></td><td>Delete to black hole</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>s</kbd></td><td>Substitute word under cursor</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>f</kbd></td><td>LSP format</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>w</kbd></td><td>Toggle wrap</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>x</kbd></td><td><code>chmod +x</code> file</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>ee</kbd></td><td>Go <code>if err != nil</code> block</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>␣</kbd></td><td><code>:source</code> file</td></tr>
+      <tr><td class="k">insert <kbd>ctrl</kbd><kbd>C</kbd></td><td>Escape</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>u</kbd></td><td>Undotree</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>nf</kbd> / <kbd>nt</kbd></td><td>Neogen docstring: func / type</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>zz</kbd> / <kbd>zZ</kbd></td><td>Zen mode</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>ck</kbd></td><td>Cloak: mask <code>.env</code> values</td></tr>
+    </table>
+  </div>
+  <div>
+    <h3>Completion &amp; Copilot</h3>
+    <table>
+      <tr><td class="k"><kbd>enter</kbd></td><td>Accept highlighted (or first) item</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>N</kbd> / <kbd>P</kbd></td><td>Move in menu</td></tr>
+      <tr><td class="k"><kbd>tab</kbd></td><td>Accept Copilot ghost text</td></tr>
+      <tr><td class="k"><kbd>alt</kbd><kbd>]</kbd> / <kbd>[</kbd></td><td>Next / prev suggestion</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>tc</kbd></td><td>Toggle Copilot</td></tr>
+      <tr><td class="k"><kbd>ctrl</kbd><kbd>S</kbd><kbd>;</kbd> / <kbd>,</kbd></td><td>Snippet next / prev field</td></tr>
+    </table>
+    <h3>LSP</h3>
+    <table>
+      <tr><td class="k"><kbd>gd</kbd></td><td>Definition</td></tr>
+      <tr><td class="k"><kbd>K</kbd></td><td>Hover</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>vrr</kbd></td><td>References</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>vrn</kbd></td><td>Rename</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>vca</kbd></td><td>Code action</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>vd</kbd></td><td>Diagnostic float</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>vws</kbd></td><td>Workspace symbol</td></tr>
+      <tr><td class="k"><kbd>[d</kbd> / <kbd>]d</kbd></td><td>Next / prev diagnostic</td></tr>
+      <tr><td class="k">insert <kbd>ctrl</kbd><kbd>H</kbd></td><td>Signature help</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>tt</kbd>, <kbd>[t</kbd> <kbd>]t</kbd></td><td>Trouble toggle, next / prev</td></tr>
+    </table>
+    <h3>Git, tests, AI</h3>
+    <table>
+      <tr><td class="k"><kbd>␣</kbd><kbd>gs</kbd></td><td>Fugitive status</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>p</kbd> / <kbd>P</kbd></td><td>(Fugitive) push / pull --rebase</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>t</kbd></td><td>(Fugitive) <code>:Git push -u origin </code></td></tr>
+      <tr><td class="k"><kbd>gu</kbd> / <kbd>gh</kbd></td><td>Conflict: take //2 / //3</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>tn</kbd> / <kbd>tf</kbd></td><td>Neotest nearest / file</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>oa</kbd></td><td>opencode: ask about this</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>os</kbd> / <kbd>ot</kbd></td><td>opencode: select / toggle</td></tr>
+      <tr><td class="k"><kbd>go</kbd>{motion} / <kbd>goo</kbd></td><td>Send range / line to opencode</td></tr>
+      <tr><td class="k"><kbd>␣</kbd><kbd>ou</kbd> / <kbd>od</kbd></td><td>Scroll opencode</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ====================================================================== -->
+<h2 id="firefox">Firefox &amp; Tridactyl</h2>
+<p class="note">New tabs and windows open the local start page, focused on the page (not the address bar), so Tridactyl keys work at once.</p>
+<div class="cols">
+  <div>
+    <h3>Firefox</h3>
+    <table>
+      <tr><td class="k"><kbd>cmd</kbd><kbd>E</kbd></td><td>Show / hide the address bar (hidden by default; show it before installing an extension)</td></tr>
+      <tr><td class="k"><kbd>cmd</kbd><kbd>L</kbd></td><td>Focus address bar</td></tr>
+      <tr><td class="k"><kbd>cmd</kbd><kbd>T</kbd> <kbd>N</kbd> <kbd>W</kbd></td><td>New tab / window, close</td></tr>
+      <tr><td class="k"><kbd>cmd</kbd><kbd>shift</kbd><kbd>T</kbd></td><td>Reopen closed tab</td></tr>
+      <tr><td class="k"><kbd>cmd</kbd><kbd>1</kbd>…<kbd>9</kbd></td><td>Tab N (9 = last)</td></tr>
+      <tr><td class="k"><kbd>cmd</kbd><kbd>opt</kbd><kbd>I</kbd></td><td>DevTools</td></tr>
+    </table>
+  </div>
+  <div>
+    <h3>Tridactyl</h3>
+    <table>
+      <tr><td class="k"><kbd>f</kbd> / <kbd>F</kbd></td><td>Link hint / in background tab</td></tr>
+      <tr><td class="k"><kbd>j</kbd> <kbd>k</kbd> <kbd>gg</kbd> <kbd>G</kbd></td><td>Scroll, top, bottom</td></tr>
+      <tr><td class="k"><kbd>H</kbd> / <kbd>L</kbd></td><td>Back / forward</td></tr>
+      <tr><td class="k"><kbd>o</kbd> / <kbd>t</kbd></td><td>Open URL here / new tab</td></tr>
+      <tr><td class="k"><kbd>d</kbd> / <kbd>u</kbd></td><td>Close tab / undo</td></tr>
+      <tr><td class="k"><kbd>J</kbd> / <kbd>K</kbd></td><td>Prev / next tab</td></tr>
+      <tr><td class="k"><kbd>/</kbd></td><td>Find in page</td></tr>
+      <tr><td class="k"><kbd>shift</kbd><kbd>esc</kbd></td><td>Toggle Tridactyl off on this page</td></tr>
+      <tr><td class="k"><kbd>:</kbd></td><td>Command line (<code>:help</code>)</td></tr>
+    </table>
+    <p class="note">Tridactyl is off on addons.mozilla.org so install prompts work.</p>
+  </div>
+</div>
+
+<!-- ====================================================================== -->
+<h2 id="layout">Repo layout</h2>
+<pre><code>dotfiles_clean/
+├── install.sh            <span class="c">idempotent installer (brew bundle + links + services + Firefox)</span>
+├── Brewfile              <span class="c">every package/app/font the configs need</span>
+├── macos/defaults.sh     <span class="c">optional AeroSpace-friendly macOS settings</span>
+├── aerospace/            <span class="c">~/.aerospace.toml</span>
+├── sketchybar/           <span class="c">sketchybarrc + plugins/*.sh</span>
+├── borders/              <span class="c">bordersrc (JankyBorders)</span>
+├── ghostty/              <span class="c">config</span>
+├── nushell/              <span class="c">config.nu, env.nu</span>
+├── starship/             <span class="c">starship.toml</span>
+├── nvim/                 <span class="c">init.lua, lua/plugins/*, lsp/*, nvim-pack-lock.json</span>
+└── firefox/
+    ├── autoconfig/       <span class="c">mozilla.cfg + local-settings.js (app bundle)</span>
+    ├── user.js, userChrome.css, userContent.css   <span class="c">(profile)</span>
+    ├── tridactylrc
+    ├── firefox-home-server.plist   <span class="c">LaunchAgent template</span>
+    └── home/             <span class="c">start page + shortcuts.html (→ README.html)</span></code></pre>
+
+<h2 id="changing">Changing things</h2>
+<ul>
+  <li><b>Add a package</b>: add a line to <code>Brewfile</code>, then run <code>./install.sh</code>.</li>
+  <li><b>Add an nvim plugin</b>: add <code>{ src = "https://github.com/owner/repo" }</code> to <code>vim.pack.add</code> in <code>nvim/init.lua</code>, create <code>nvim/lua/plugins/&lt;name&gt;.lua</code>, and require it from <code>lua/plugins/init.lua</code>. Update plugins with <code>:lua vim.pack.update()</code> and commit <code>nvim-pack-lock.json</code>.</li>
+  <li><b>Add a shortcut</b>: edit the config, then update <b>both</b> <code>README.md</code> and this file.</li>
+  <li><b>Machine-specific extras</b> (work wrappers, secrets-adjacent PATHs): put a <code>*.nu</code> file in <code>~/Library/Application Support/nushell/autoload/</code>, never in this repo.</li>
+</ul>
+
+</body>
+</html>
